@@ -1,0 +1,85 @@
+---
+title: "Week 1"
+author: "Jonathan Speh"
+date: "1/23/2021"
+output: html_document
+---
+
+```{r}
+library(rafalib)
+library(readr)
+library(dplyr)
+```
+
+
+```{r}
+myVec<-c(2.23, 3.45, 1.87, 2.11, 7.33, 18.34, 19.23 )
+mean(myVec)
+```
+# Use looop to determine valeu of sum (i 1:25) i²
+
++ why would I
+```{r}
+sum(c(1:25)^2)
+```
+# some cars stuff
+```{r}
+data(cars)
+class(cars)
+nrow(cars)
+colnames(cars)
+mean(cars[,2])
+
+which(cars$dist==85)
+
+
+```
+# Female mice dataset
+```{r}
+femaleMice<-read_csv("https://raw.githubusercontent.com/genomicsclass/dagdata/master/inst/extdata/femaleMiceWeights.csv")
+
+head(femaleMice)
+```
+```{r}
+dim(femaleMice)
+```
+
+## average weigh on high fat diest
+
+```{r}
+# Thats how they want me to do it...
+# femaleMice[which(femaleMice$Diet=="hf"),]
+# femaleMice[femaleMice$Diet=="hf",]
+
+femaleMice%>%group_by(Diet)%>%summarise(meanWeight=mean(Bodyweight),.groups="drop")
+```
+## sample funciton
+
+```{r}
+set.seed(1)
+femaleMice[sample(13:24,1),]
+
+```
+
+# sleep dataset
+```{r}
+sleepDat<-read_csv("https://raw.githubusercontent.com/genomicsclass/dagdata/master/inst/extdata/msleep_ggplot2.csv")
+
+class(sleepDat)
+head(sleepDat)
+```
+## explore
+```{r}
+sleepDat%>%count(order,sort=TRUE)
+
+sleepDat%>%filter(order=="Primates")%>%select(sleep_total)%>%class()
+sleepDat%>%group_by(order)%>%summarise(meanSleep=mean(sleep_total))
+```
+# EDA
+## QQ plot
+```{r}
+#skewData<-base::load("~/Downloads/skew.RData")
+
+#dim(skew)
+```
+
