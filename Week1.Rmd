@@ -9,6 +9,7 @@ output: html_document
 library(rafalib)
 library(readr)
 library(dplyr)
+library(ggplot2)
 ```
 
 
@@ -75,11 +76,57 @@ sleepDat%>%count(order,sort=TRUE)
 sleepDat%>%filter(order=="Primates")%>%select(sleep_total)%>%class()
 sleepDat%>%group_by(order)%>%summarise(meanSleep=mean(sleep_total))
 ```
+
+
 # EDA
 ## QQ plot
-```{r}
-#skewData<-base::load("~/Downloads/skew.RData")
 
-#dim(skew)
++ that's tha part that didn't work because the skew data is a mess
+```{r}
+skewData<-base::load("~/Downloads/skew.RData")
+
+
+dim(skewData)
+```
+
+# Not normally distributed data
+
+```{r}
+data("InsectSprays")
+head(InsectSprays)
+```
+##  boxplots
++ which has then  lowees median
++ Boxplot components. 
+  + Median
+  + 25th and 75 quantile --> box = 25% of data
+  + range
+  + outliers
+```{r}
+boxplot(count ~ spray, data = InsectSprays)
+```
+
+
+```{r}
+data(nym.2002, package = "UsingR")
+head(nym.2002)
+```
+
+
+```{r}
+nym.2002%>%
+  ggplot(aes(x=time))+
+  geom_histogram(alpha=0.7,colour="black")+
+  facet_wrap(~gender)
+```
+
+```{r}
+nym.2002%>%
+  ggplot(aes(x=gender, y=time))+
+  geom_violin(draw_quantiles = c(0.25,0.5,0.75))
+  
+nym.2002%>%group_by(gender)%>%
+  summarise(mean=mean(time),median=median(time))
+  
 ```
 
