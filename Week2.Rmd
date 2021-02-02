@@ -1,0 +1,222 @@
+---
+title: "Week 2"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+RNGkind("Mersenne-Twister", "Inversion", "Rejection")
+```
+
+# Introduction to random variables
+
+In realty - only subset of population is available --\> use for interference
+
+## Exercise random vars.
+
+### Download data
+
+```{r download, message=FALSE}
+myData<-read_csv("https://raw.githubusercontent.com/genomicsclass/dagdata/master/inst/extdata/femaleControlsPopulation.csv")
+glimpse(myData)
+
+head(myData)
+```
+
+### Expercises
+
+```{r}
+meanWeight<-mean(myData$Bodyweight)
+set.seed(1)
+meanSubs<-mean(sample(myData$Bodyweight,5))
+abs(meanWeight-meanSubs)
+
+set.seed(5)
+meanSubs<-mean(sample(myData$Bodyweight,5))
+abs(meanWeight-meanSubs)
+```
+
+# Null distributions and p values
+
+```{r}
+femaleMiceControl<-read_csv("https://raw.githubusercontent.com/genomicsclass/dagdata/master/inst/extdata/femaleControlsPopulation.csv")
+
+femaleMiceControl
+
+# Simulate no treatment effect --> H0 == T
+# run 1000 iterations
+n<-10000
+nulls<-vector(length = n)
+
+for(i in 1:n){
+  control<-sample(femaleMiceControl$Bodyweight,12)
+  treatment<-sample(femaleMiceControl$Bodyweight,12)
+  nulls[i]<-(mean(control)-mean(treatment))
+}
+
+# Show likelyhood of extreme differences under null hypothesis 
+hist(nulls)
+```
+
+### count how often a vlue \> observed appears in Nulls
+
+```{r}
+# load data
+read_csv("https://raw.githubusercontent.com/genomicsclass/dagdata/master/inst/extdata/femaleMiceWeights.csv")->femaleMice
+
+femaleMice%>%group_by(Diet)%>%
+  summarise(mean(Bodyweight),.groups = "drop")->groupedMeans
+
+
+obsDiff<-groupedMeans[2,2] - groupedMeans[1,2]
+
+# Compute proortion of null distributed values that are more extreme than the observed once 
+
+sum(nulls > obsDiff$`mean(Bodyweight)`) /n ->oneSided
+sum(abs(nulls) > obsDiff$`mean(Bodyweight)`) /n ->twoSided
+
+```
+
+Probability that the outcome from the null distribution is more extreme than the observed value when H0 is true: For one sided: `r oneSided`\
+Two sided: `r twoSided`
+
+In the given example, the null distribution was constructed based on a complete dataset of the non-trated population. It is usually not possible to study the whole population --\> that is done in the next steps
+
+## Null distribution exercise
+
+```{r}
+femaleMiceControl<-unlist(femaleMiceControl)
+popMean<-mean(femaleMiceControl)
+set.seed(1)
+n=10000
+splMeans<- vector("numeric",n)
+for (i in 1:n) {
+  sample(femaleMiceControl,5)%>%mean()->splMeans[i]
+}
+
+
+sum(abs(popMean-splMeans) > 1) /n
+```
+
+# Propability distributions
+
+## How to summarise data
+
+-   Histogram is a good summary
+
+    -   helps to compute proportion of samples below / above / within certain value
+
+-   Empirical cumulative distribution function
+
+    -   f(x) for x == observed valuable and f(x) cumulative proportion (i.e. proportion of all values up to x)
+
+    -   shows proportion of values less or equal to x
+
+    -   f(x) can be computed by mean(sample \<= x)
+
+        -   calculates sum of values in sample that are less or equal to x and divides by length of sample
+
+## Exersice propability distribution
+
+### load data
+
+```{r}
+library(gapminder)
+data(gapminder)
+head(gapminder)
+```
+
+### Proportion of countries in 1952 with lifeExpct \<=40
+
+```{r}
+gapminder%>%filter(year==1952)%>%
+  summarise(mean(lifeExp<=40))
+# same:
+gapminder%>%filter(year==1952)%>%
+  summarise(sum(lifeExp<=40)/nrow(.))
+
+```
+
+### builid a custom ecdf function
+
+```{r}
+gapminder%>%filter(year==1952)%>%select(lifeExp)->x
+
+prop<-function(q){
+  out<-mean(x <= q)
+  return(out)
+}
+
+prop(40)
+```
+
+### Sequence over several qs
+
+```{r}
+qs<-seq(min(x),max(x),1)
+
+sapply(qs, prop)->props
+plot(qs,props)
+```
+
+### Use build in ecdf function to do the same
+
+```{r}
+plot(ecdf(x$lifeExp))
+
+```
+
+# Central limit theorem
+
+Normal approximation --> needs only mu (average) and sigma (standard deviation) to define distribution
++  integral can be used to estimate proportion of all values within an interval 
++  QQ plots compute for each percentile the number of data that is expected to be below that data and plot explected vs. observed
++  Standard units 
+    +  If data is aprox normal -> can be converted into standard units by substracting mean and dividing by SD --> normal distribution with mean = 0 and SD = 1 --> Z score (standard normal distribution)
+    Z score == amount of SDs far away from mean
+    
+## Normal distribution exercise
+### take samples and assess distribution
+```{r}
+# make averages5
+set.seed(1)
+n <- 1000
+averages5 <- vector("numeric",n)
+
+for(i in 1:n){
+  X <- sample(femaleMiceControl,5)
+  averages5[i] <- mean(X)
+}
+
+# make averages50
+set.seed(1)
+n <- 1000
+averages50 <- vector("numeric",n)
+for(i in 1:n){
+  X <- sample(femaleMiceControl,50)
+  averages50[i] <- mean(X)
+}
+
+par(mfrow=c(1,2))
+hist(averages5)
+hist(averages50)
+```
+### Proportion of averages between 23 and 25
+
+```{r}
+avFilt<-averages50>=23 & averages50<=25
+mean(avFilt)
+```
+
+### Generalised: find poroportion of observations between 23-25 with mu=23.9 and sigma =0.43 (like the data above...)
++ use pnorm function
+    +    pnorm(x, mu, sigma)
+    +    x= cutof
+    
+```{r}
+pnorm(25,23.9,0.43)-pnorm(23,23.9,0.43)
+
+
+```
+
+# Lets continue another day...
