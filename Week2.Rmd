@@ -168,15 +168,12 @@ plot(ecdf(x$lifeExp))
 
 # Central limit theorem
 
-Normal approximation --> needs only mu (average) and sigma (standard deviation) to define distribution
-+  integral can be used to estimate proportion of all values within an interval 
-+  QQ plots compute for each percentile the number of data that is expected to be below that data and plot explected vs. observed
-+  Standard units 
-    +  If data is aprox normal -> can be converted into standard units by substracting mean and dividing by SD --> normal distribution with mean = 0 and SD = 1 --> Z score (standard normal distribution)
-    Z score == amount of SDs far away from mean
-    
+Normal approximation --\> needs only mu (average) and sigma (standard deviation) to define distribution + integral can be used to estimate proportion of all values within an interval + QQ plots compute for each percentile the number of data that is expected to be below that data and plot explected vs. observed + Standard units + If data is aprox normal -\> can be converted into standard units by substracting mean and dividing by SD --\> normal distribution with mean = 0 and SD = 1 --\> Z score (standard normal distribution) Z score == amount of SDs far away from mean
+
 ## Normal distribution exercise
+
 ### take samples and assess distribution
+
 ```{r}
 # make averages5
 set.seed(1)
@@ -201,6 +198,7 @@ par(mfrow=c(1,2))
 hist(averages5)
 hist(averages50)
 ```
+
 ### Proportion of averages between 23 and 25
 
 ```{r}
@@ -209,14 +207,137 @@ mean(avFilt)
 ```
 
 ### Generalised: find poroportion of observations between 23-25 with mu=23.9 and sigma =0.43 (like the data above...)
-+ use pnorm function
-    +    pnorm(x, mu, sigma)
-    +    x= cutof
-    
+
+-   use pnorm function
+
+    -   pnorm(x, mu, sigma)
+    -   x= cutof
+
 ```{r}
 pnorm(25,23.9,0.43)-pnorm(23,23.9,0.43)
 
 
 ```
 
-# Lets continue another day...
+## Populations, parameteres and sample estimates
+
+-   if only samples from populations can be taken (not entire population) --\> statistical inference
+
+    -   take random measurements from populations
+
+Population average --\> mu of different groups are searched and compared
+
+Sample averages are random variables
+
+## Populations exercise
+
+### get data
+
+```{r}
+micePheno<-read_csv("https://raw.githubusercontent.com/genomicsclass/dagdata/master/inst/extdata/mice_pheno.csv")%>%na.omit()
+
+glimpse(micePheno)
+head(micePheno)
+micePheno%>%filter(Sex=="M",Diet=="chow")%>%select(Bodyweight)%>%
+  unlist()->maleChow
+
+micePheno%>%filter(Sex=="M",Diet=="hf")%>%select(Bodyweight)%>%
+  unlist()->maleHf
+```
+
+### mean and population SD
+
+```{r}
+library(rafalib)
+mean(maleChow)
+popsd(maleChow)
+
+mean(maleHf)
+popsd(maleHf)
+
+```
+
+### sample means
+
+```{r}
+set.seed(1)
+mean(sample(maleChow,25))->maleChowSampleMean
+set.seed(1)
+mean(sample(maleHf,25))->maleHfSampleMean
+```
+
+### abs difference between differences in sample and population means
+
+```{r}
+mean(maleChow) - mean(maleHf) ->malePopDif
+maleChowSampleMean - maleHfSampleMean -> maleSampleDif
+
+abs(malePopDif - maleSampleDif)
+```
+
+```{r}
+micePheno%>%filter(Sex=="F",Diet=="chow")%>%select(Bodyweight)%>%
+  unlist()->femaleChow
+
+micePheno%>%filter(Sex=="F",Diet=="hf")%>%select(Bodyweight)%>%
+  unlist()->femaleHf
+```
+
+### abs difference between differences in sample and population means
+
+```{r}
+set.seed(2)
+mean(sample(femaleChow,25))->femaleChowSampleMean
+set.seed(2)
+mean(sample(femaleHf,25))->femaleHfSampleMean
+
+mean(femaleChow) - mean(femaleHf) ->femalePopDif
+femaleChowSampleMean - femaleHfSampleMean -> femaleSampleDif
+
+abs(femalePopDif - femaleSampleDif)
+```
+
+Central limit theorem --\> sample average follows normal distribution with mean population average and $sigma = sigmaX/sqrt(N)$ + SigmaX --\> population standard deviation (typical deviation from mean) + Sample average --\> random variable + repeated samples --\> sample means would follow the aforementioned normal distribution $N(mu_x,\frac{sigma_x}{\sqrt{N}})$  
+
+How to use this in practice? 
+Differences betwen two sample means: 
+
+$N(0,1) = \frac{Y - X}{\sqrt{{sigma_x^2}/{N} + sigma_y^2/N}}$ if H0 == TRUE
+ --> with increasing N, SD of final distribution decreases, histogram gets "narrower". 
++ Problem in real life: Population SD is not known --> t.test is needed
+
+
+## Exercise CLt
+If list of numbers is normally distributed, what proportion of these numbers are within 1 SD of the average?
+```{r}
+pnorm(3) - pnorm(-3)  
+
+```
+
+### proportin of male control mice within 1Sd from average weight
+```{r}
+maleChowMean<-mean(maleChow)
+maleChowSD<-popsd(maleChow)
+
+1- (mean(maleChow >=maleChowMean+maleChowSD) + mean(maleChow <=maleChowMean-maleChowSD))
+
+# W/in 2sd
+1- (mean(maleChow >=maleChowMean+2*maleChowSD) + mean(maleChow <=maleChowMean-2*maleChowSD))
+
+# W/in 3sd
+1- (mean(maleChow >=maleChowMean+3*maleChowSD) + mean(maleChow <=maleChowMean-3*maleChowSD))
+
+```
+### test CLT
+```{r}
+set.seed(1)
+avgs<-replicate(10000, mean(sample(maleChow,25)))
+mypar(1,2)
+hist(avgs)
+qqnorm(avgs)
+qqline(avgs)
+mean(avgs)
+popsd(avgs)
+
+```
+
