@@ -341,3 +341,119 @@ popsd(avgs)
 
 ```
 
+# t.test
+t statisticsc: $\frac{observed diff}{standard error}$
+
+## t.test exercise
+
+### Simluate clt with rolled dice
+```{r}
+# roll a dice
+n<-100
+x<-sample(1:6, n, replace=TRUE)
+# proportion of roled sixes
+prop<-mean(x==6)
+
+# function that rolls n dice and returns z score for each roll
+dice<-function(n,p){
+  x<-sample(1:6, n, replace=TRUE)
+  z<-(mean(x==6) - p) / sqrt(p*(1-p)/n)
+  return(z)
+}
+# replicate 10000 times 
+p=1/6
+set.seed(1)
+replicate(10000, dice(n,p))->out
+
+# z distribution should be N(0,1)
+mean(out)
+sd(out)
+qqnorm(out)
+qqline(out)
+
+mean(abs(out)>2)
+
+```
+
+### run previous simulations with different p's and n'S
+
+```{r}
+p<-0.5
+n<-30
+
+replicate(10000, dice(n,p))->out
+
+# z distribution should be N(0,1)
+qqnorm(out)
+qqline(out)
+
+mean(out)
+sd(out)
+
+```
+
+### Mouse example
+```{r}
+x <- filter(femaleMice, Diet=="chow") %>% select(Bodyweight) %>% unlist
+y <- filter(femaleMice, Diet=="hf") %>% select(Bodyweight) %>% unlist
+
+# sample average control
+mean(x)
+sd(x)
+popsd(x)
+```
+mean(x) follows normal distribution $N(µ_x,\frac{sigma_x}{\sqrt{n}}$
+
+Z distribution:
+$Z=\sqrt{n}*\frac{\bar{x}-µ_x}{\sigma_x}$
+--> $Z=N(0,1)$
+
+# Use CLT to apprximate p for popMean of by more thatn 2 grams for mean(x)
+
+mean(x) follows sd with N(µ_x, sd/sqrt(12))
+
+```{r}
+deltaMean<-2
+
+z<-sqrt(12)*deltaMean/sd(x)
+(1-pnorm(z))*2 # two tailed
+
+
+```
+
+## Null hypotheses
+No effect --> $µ_x=µ_y$
+Use the CLT to approx $\bar{X}=N(µ_x,\frac{\sigma_x}{\sqrt{m}}$ and $\bar{Y}$ accordingly. If Null hypthesis is true: $mean(\bar{X}-\bar{Y})=0$ and sd of this statistics is $SE(\bar{X} -\bar{Y})= \sqrt{\frac{\sigma_y^2}{12}+\frac{\sigma_x^2}{12}}$
+
+
+```{r}
+sdx<-sd(x)
+sdy<-sd(y)
+n<-12
+
+SE<-sqrt((sdx^2/12)+(sdy^2/12))
+SE
+
+```
+# compute  t.statistic
+$t=\frac{diff}{SE}$
+```{r}
+diffMean<-mean(y)-mean(x)
+tstat<-diffMean/SE
+tstat
+```
+
+## more clt and tstats
+2.055174
+### pvalue based on t-stats
+T distribution accounts for variability introduced by estimation --> larger values more probably under null distribution (fatter tails)
+```{r}
+# based on CTL
+right<-1-pnorm(abs(tstat))
+left<-pnorm(-abs(tstat))
+left+right
+# based on t-dist
+t.test(x,y)
+```
+
+
